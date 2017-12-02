@@ -1,0 +1,8 @@
+[package]
+name = "kago"
+version = "0.1.0"
+authors = ["yutopp <yutopp@gmail.com>"]
+
+[dependencies]
+libc = "0.2.34"
+scopeguard = "0.3.3"
