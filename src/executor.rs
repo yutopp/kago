@@ -5,13 +5,6 @@ use ipc_channel::ipc;
 
 use error::{Error, SysCallError};
 
-#[derive(Debug)]
-struct ClonedArgs {
-    ipc_server_name: String,
-}
-
-type ClonedResult = Result<ExecutedReport, SysCallError>;
-
 pub fn run() -> Result<ExecutedReport, Error> {
     info!("Start");
 
@@ -36,7 +29,7 @@ pub fn run() -> Result<ExecutedReport, Error> {
         let pid = libc::clone(
             cloned_entry_point,
             p.offset(size_of_stack_for_child as isize),
-            libc::CLONE_NEWPID | libc::CLONE_NEWNS | libc::CLONE_NEWNET | libc::CLONE_NEWIPC | libc::CLONE_NEWUTS | libc::SIGCHLD | libc::CLONE_UNTRACED/* | CLONE_NEWUSER*/,
+            libc::CLONE_NEWPID | libc::CLONE_NEWNS | libc::CLONE_NEWNET | libc::CLONE_NEWIPC | libc::CLONE_NEWUTS | libc::SIGCHLD | libc::CLONE_UNTRACED /*| libc::CLONE_NEWUSER*/,
             &mut opts as *mut _ as *mut libc::c_void
             );
         if pid == -1 {
@@ -53,11 +46,11 @@ pub fn run() -> Result<ExecutedReport, Error> {
         if status != 0 {
             return Err(Error::ClonedProcessBroken(status))
         }
-
-        debug!("Wait for report");
-        let (_, res) = try!(server.accept());
-        Ok(try!(res))
     }
+
+    debug!("Wait for report");
+    let (_, res) = try!(server.accept());
+    Ok(try!(res))
 }
 
 fn ignore_signals() -> Result<(), Error> {
@@ -81,6 +74,13 @@ fn ignore_signals() -> Result<(), Error> {
 
     Ok(())
 }
+
+#[derive(Debug)]
+struct ClonedArgs {
+    ipc_server_name: String,
+}
+
+type ClonedResult = Result<ExecutedReport, SysCallError>;
 
 extern "C" fn cloned_entry_point(args_p: *mut libc::c_void) -> i32 {
     let args = unsafe { &*(args_p as *mut ClonedArgs) };
@@ -117,21 +117,21 @@ unsafe fn monitor() -> Result<ExecutedReport, SysCallError> {
         },
 
         0 => {
-            // forked process, noreturn
+            // forked process
             let tx0 = ipc::IpcSender::<SysCallError>::connect(err_server_name).unwrap();
-//            if true {
-//                tx0.send(("10", 10)).unwrap();
-//            }
-            // if reached to here, maybe error...
+
+            // noreturn if succeeded.
+            let err = execute_command_in_jail();
+            tx0.send(err).unwrap();
             libc::exit(255);
         },
 
         pid => {
             let res = try!(wait(pid));
 
-//            if let Ok((_, err)) = err_server.accept() {
-//                return Err(err);
-//            }
+            if let Ok((_, err)) = err_server.accept() {
+                return Err(err);
+            }
 
             return Ok(res);
         }
@@ -164,4 +164,8 @@ unsafe fn wait(pid: libc::pid_t) -> Result<ExecutedReport, SysCallError> {
         cpu_time_micro_sec: cpu_time_micro_sec,
         used_memory_bytes: used_memory_bytes,
     })
+}
+
+unsafe fn execute_command_in_jail() -> SysCallError {
+    libc::exit(1);
 }
