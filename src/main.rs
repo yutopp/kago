@@ -1,16 +1,11 @@
 extern crate kago;
-extern crate sloggers;
+extern crate simplelog;
 
-use sloggers::Build;
-use sloggers::terminal::{TerminalLoggerBuilder, Destination};
-use sloggers::types::Severity;
+use simplelog::{Config, SimpleLogger, LogLevelFilter};
 
 fn main() {
-    let mut builder = TerminalLoggerBuilder::new();
-    builder.level(Severity::Debug);
-    builder.destination(Destination::Stdout);
-    let logger = builder.build().unwrap();
+    let _ = SimpleLogger::init(LogLevelFilter::Debug, Config::default()).unwrap();
 
-    let res = kago::executor::run(logger);
+    let res = kago::executor::run();
     println!("Hello, world! #{:?}", res);
 }

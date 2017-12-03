@@ -5,8 +5,8 @@ authors = ["yutopp <yutopp@gmail.com>"]
 
 [dependencies]
 libc = "0.2.34"
-slog = "2.0.12"
-sloggers = "*"
+log = "0.3.8"
+simplelog = "0.4.3"
 scopeguard = "0.3.3"
 ipc-channel = "*"
 serde = "1.0.23"

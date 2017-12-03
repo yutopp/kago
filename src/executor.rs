@@ -2,7 +2,6 @@ use libc;
 use std::ptr;
 use std::mem;
 use ipc_channel::ipc;
-use slog;
 
 use error::{Error, SysCallError};
 
@@ -13,8 +12,8 @@ struct ClonedArgs {
 
 type ClonedResult = Result<ExecutedReport, SysCallError>;
 
-pub fn run(logger: slog::Logger) -> Result<ExecutedReport, Error> {
-    info!(logger, "Start");
+pub fn run() -> Result<ExecutedReport, Error> {
+    info!("Start");
 
     let size_of_stack_for_child = 8 * 1024 as usize;
 
@@ -46,7 +45,7 @@ pub fn run(logger: slog::Logger) -> Result<ExecutedReport, Error> {
 
         //try!(ignore_signals());
 
-        //debug!(logger, "Wait for pid: {:?}", pid);
+        debug!("Wait for pid: {:?}", pid);
         let mut status: i32 = mem::uninitialized();
         if libc::waitpid(pid, &mut status, 0) == -1 {
             return Err(Error::SysCall(SysCallError::new("waitpid")))
@@ -55,7 +54,7 @@ pub fn run(logger: slog::Logger) -> Result<ExecutedReport, Error> {
             return Err(Error::ClonedProcessBroken(status))
         }
 
-        debug!(logger, "Wait for report");
+        debug!("Wait for report");
         let (_, res) = try!(server.accept());
         Ok(try!(res))
     }
