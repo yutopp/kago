@@ -16,7 +16,7 @@ type ClonedResult = Result<ExecutedReport, SysCallError>;
 pub fn run(logger: slog::Logger) -> Result<ExecutedReport, Error> {
     info!(logger, "Start");
 
-    let size_of_stack_for_child = 16 * 1024 as usize;
+    let size_of_stack_for_child = 8 * 1024 as usize;
 
     let (server, server_name) = try!(ipc::IpcOneShotServer::<ClonedResult>::new());
     let mut opts = ClonedArgs {
